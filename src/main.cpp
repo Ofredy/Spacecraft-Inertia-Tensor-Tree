@@ -2,8 +2,11 @@
 #include "station_module_inertia.h"
 
 
-int main() {
-    SpaceStationModuleInertia mod;
+int main() 
+{
+
+    // module f is a child of module d
+    SpaceStationModuleInertia mod_f;
 
     std::vector<double> masses = {500, 500, 500, 500};
     std::vector<std::array<double,3>> pos = {
@@ -13,11 +16,14 @@ int main() {
         { 1.0, -1.0, 0.0}
     };
 
-    auto I = mod.calculate_module_inertia(masses, pos);
+    mod_f.calculate_module_inertia(masses, pos);
+    mod_f.calculate_module_inertia_wrt_parent();
 
-    std::cout << "I(COM):\n";
-    std::cout << "  [ " << I[0][0] << "  " << I[0][1] << "  " << I[0][2] << " ]\n";
-    std::cout << "  [ " << I[1][0] << "  " << I[1][1] << "  " << I[1][2] << " ]\n";
-    std::cout << "  [ " << I[2][0] << "  " << I[2][1] << "  " << I[2][2] << " ]\n";
+    // module d
+    SpaceStationModuleInertia mod_d;
+    mod_d.add_module_child(&mod_f);
+
+    mod_d.calculate_module_inertia(masses, pos);
+
     return 0;
 }
