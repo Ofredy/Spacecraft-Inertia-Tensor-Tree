@@ -1,44 +1,32 @@
 #pragma once
 #include <vector>
 #include <array>
-#include <cstddef> // for std::size_t
+
 
 class SpaceStationModuleInertia 
 {
 public:
-
-    struct MassPoint {
-        double m;          // mass (kg)
-        double x, y, z;    // position in module frame (meters)
-    };
-
-    using Mat3 = std::array<std::array<double,3>,3>;
-    using Vec3 = std::array<double,3>;
-
-    SpaceStationModuleInertia() = default;
-
-    // Add a single point mass
-    void add_mass(double m, double x, double y, double z);
-
-    // Bulk set (replaces any existing points)
-    void set_points(const std::vector<MassPoint>& pts);
-
-    // Number of points
-    std::size_t size() const;
-
-    // Total mass
-    double total_mass() const;
-
-    // Center of mass (computed from current points)
-    Vec3 center_of_mass() const;
-
-    // Inertia tensor about the center of mass (3x3, in the input coordinate frame)
-    Mat3 inertia_about_com() const;
+    // The ONLY public function:
+    // Compute inertia about the center of mass (COM) from masses & positions.
+    // Throws std::invalid_argument on bad input.
+    std::array<std::array<double,3>,3>
+    calculate_module_inertia(const std::vector<double>& masses,
+                             const std::vector<std::array<double,3>>& positions);
 
 private:
 
-    void require_nonempty() const;
+    struct MassPoint { double m, x, y, z; };
 
+    void load_points_(const std::vector<double>& m,
+                      const std::vector<std::array<double,3>>& p);
+    void compute_total_mass_and_com_();
+    void compute_inertia_about_com_();
+
+    // internal storage
     std::vector<MassPoint> points_;
 
+    // stored results (kept private)
+    double total_mass_{0.0};
+    std::array<double,3> com_{};                 
+    std::array<std::array<double,3>,3> inertia_com_{}; 
 };

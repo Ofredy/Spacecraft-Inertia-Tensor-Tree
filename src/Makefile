@@ -1,5 +1,6 @@
 # Makefile (lives in src/)
 # Builds executable in the current src/ directory.
+# Object files go to src/build/ and are wiped by `make clean`.
 
 # --- toolchain & flags ---
 CXX       := g++
@@ -7,20 +8,26 @@ CXXFLAGS  := -std=c++17 -O2 -Wall -Wextra -Wpedantic
 CPPFLAGS  := -I"../lib/inertia_tree_lib"
 
 # --- exe name (handles Windows .exe) ---
+APP    := inertia_tree
 ifeq ($(OS),Windows_NT)
   EXEEXT := .exe
 else
   EXEEXT :=
 endif
-TARGET := inertia_demo$(EXEEXT)
+TARGET := $(APP)$(EXEEXT)
+
+# --- dirs ---
+BUILD_DIR := build
+LIB_DIR   := ../lib/inertia_tree_lib
+SRC_DIR   := .
 
 # --- sources & objects ---
-LIB_DIR  := ../lib/inertia_tree_lib
 LIB_SRCS := $(wildcard $(LIB_DIR)/*.cpp)
-LIB_OBJS := $(notdir $(LIB_SRCS:.cpp=.o))
+LIB_BASENAMES := $(notdir $(LIB_SRCS))
+LIB_OBJS := $(addprefix $(BUILD_DIR)/,$(LIB_BASENAMES:.cpp=.o))
 
-MAIN_SRC := main.cpp
-MAIN_OBJ := main.o
+MAIN_SRC := $(SRC_DIR)/main.cpp
+MAIN_OBJ := $(BUILD_DIR)/main.o
 
 OBJS := $(MAIN_OBJ) $(LIB_OBJS)
 
@@ -32,23 +39,40 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o "$(TARGET)"
 
-# --- compile rules ---
-$(MAIN_OBJ): $(MAIN_SRC)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c "$(MAIN_SRC)" -o "$(MAIN_OBJ)"
+# --- make build dir ---
+.PHONY: dirs
+dirs:
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+else
+	@mkdir -p "$(BUILD_DIR)"
+endif
 
-# build each lib/*.cpp into a local .o (no subdirs)
-%.o: $(LIB_DIR)/%.cpp
+# --- compile rules ---
+$(BUILD_DIR)/main.o: $(MAIN_SRC) | dirs
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c "$<" -o "$@"
+
+# Build each lib/*.cpp into build/*.o
+$(BUILD_DIR)/%.o: $(LIB_DIR)/%.cpp | dirs
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c "$<" -o "$@"
 
 # --- utilities ---
 .PHONY: clean run debug release
 clean:
-	- rm -f *.o "$(TARGET)"
-	- cmd /C del /Q *.o 2>nul
-	- cmd /C del /Q "$(TARGET)" 2>nul
+ifeq ($(OS),Windows_NT)
+	@cmd /C if exist "$(BUILD_DIR)" rmdir /S /Q "$(BUILD_DIR)"
+	@cmd /C del /Q "$(TARGET)" 2>nul
+else
+	@rm -rf "$(BUILD_DIR)"
+	@rm -f "$(TARGET)"
+endif
 
 run: all
+ifeq ($(OS),Windows_NT)
 	"./$(TARGET)"
+else
+	./$(TARGET)
+endif
 
 debug: CXXFLAGS := -std=c++17 -g -O0 -Wall -Wextra -Wpedantic
 debug: clean all
