@@ -1,54 +1,57 @@
-# Use cmd.exe so Windows commands work (mkdir, rmdir, del)
-SHELL := cmd
-.SHELLFLAGS := /C
+# Makefile (lives in src/)
+# Builds executable in the current src/ directory.
 
+# --- toolchain & flags ---
 CXX       := g++
-AR        := ar
-CXXFLAGS  := -std=c++2a -O2 -Wall -Wextra -I"../lib"
-LDFLAGS   :=
+CXXFLAGS  := -std=c++17 -O2 -Wall -Wextra -Wpedantic
+CPPFLAGS  := -I"../lib/inertia_tree_lib"
 
-# Paths (keep them simple; quotes added in commands to survive spaces)
-BUILD_DIR := ../build
-LIB_DIR   := ../lib
+# --- exe name (handles Windows .exe) ---
+ifeq ($(OS),Windows_NT)
+  EXEEXT := .exe
+else
+  EXEEXT :=
+endif
+TARGET := inertia_demo$(EXEEXT)
 
-BIN_NAME  := iss_inertia
-APP_BIN   := $(BIN_NAME).exe
+# --- sources & objects ---
+LIB_DIR  := ../lib/inertia_tree_lib
+LIB_SRCS := $(wildcard $(LIB_DIR)/*.cpp)
+LIB_OBJS := $(notdir $(LIB_SRCS:.cpp=.o))
 
-# Sources/objects
-LIB_SRCS    := $(wildcard $(LIB_DIR)/*.cpp)
-LIB_OBJS    := $(patsubst $(LIB_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(LIB_SRCS))
-STATIC_LIB  := $(BUILD_DIR)/libinertia.a
+MAIN_SRC := main.cpp
+MAIN_OBJ := main.o
 
-APP_SRCS := $(wildcard *.cpp)
-APP_OBJS := $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(APP_SRCS))
+OBJS := $(MAIN_OBJ) $(LIB_OBJS)
 
-.PHONY: all clean dirs run
+# --- default ---
+.PHONY: all
+all: $(TARGET)
 
-all: dirs $(APP_BIN)
+# --- link ---
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o "$(TARGET)"
 
-dirs:
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
+# --- compile rules ---
+$(MAIN_OBJ): $(MAIN_SRC)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c "$(MAIN_SRC)" -o "$(MAIN_OBJ)"
 
-$(APP_BIN): $(STATIC_LIB) $(APP_OBJS)
-	$(CXX) -o "$(APP_BIN)" $(APP_OBJS) "$(STATIC_LIB)" $(LDFLAGS)
+# build each lib/*.cpp into a local .o (no subdirs)
+%.o: $(LIB_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c "$<" -o "$@"
 
-$(STATIC_LIB): $(LIB_OBJS)
-	$(AR) rcs "$(STATIC_LIB)" $(LIB_OBJS)
-
-# Compile app .cpp in src/ -> ../build/*.o
-$(BUILD_DIR)/%.o: %.cpp
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
-	$(CXX) $(CXXFLAGS) -c "$<" -o "$@"
-
-# Compile lib .cpp in ../lib -> ../build/*.o
-$(BUILD_DIR)/%.o: $(LIB_DIR)/%.cpp
-	@if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)"
-	$(CXX) $(CXXFLAGS) -c "$<" -o "$@"
+# --- utilities ---
+.PHONY: clean run debug release
+clean:
+	- rm -f *.o "$(TARGET)"
+	- cmd /C del /Q *.o 2>nul
+	- cmd /C del /Q "$(TARGET)" 2>nul
 
 run: all
-	".\$(APP_BIN)"
+	"./$(TARGET)"
 
-clean:
-	@echo Cleaning...
-	@if exist "$(BUILD_DIR)" rmdir /S /Q "$(BUILD_DIR)"
-	@if exist "$(APP_BIN)"  del /Q "$(APP_BIN)"
+debug: CXXFLAGS := -std=c++17 -g -O0 -Wall -Wextra -Wpedantic
+debug: clean all
+
+release: CXXFLAGS := -std=c++17 -O3 -DNDEBUG -Wall -Wextra -Wpedantic
+release: clean all
