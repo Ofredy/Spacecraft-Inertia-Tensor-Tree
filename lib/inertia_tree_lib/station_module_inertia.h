@@ -4,6 +4,8 @@
 #include <array>
 #include <stdexcept>
 
+#include "quat_math.h"
+
 
 class SpaceStationModuleInertia 
 {
@@ -21,9 +23,8 @@ private:
 
     std::vector<SpaceStationModuleInertia*> children_{};         // N children
 
-    std::array<double,3> parent_distance = { 0.0, 10.0, 0.0 };
-    std::array<double,3> q_module{};
-    std::array<double,3> q_module_wrt_parent{};
+    std::array<double,3> parent_distance_parent = { 0.0, 10.0, 0.0 };
+    std::array<double, 4> q_parent_from_child = { 0.9659, 0.2588, 0.0, 0.0 };
 
     struct MassPoint { double m, x, y, z; };
     std::vector<MassPoint> points_;

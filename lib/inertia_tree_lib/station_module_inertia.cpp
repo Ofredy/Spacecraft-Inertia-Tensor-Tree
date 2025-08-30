@@ -12,16 +12,17 @@ void SpaceStationModuleInertia::calculate_module_inertia(
 
 void SpaceStationModuleInertia::calculate_module_inertia_wrt_parent()
 {
-    // Assumes child and parent frames are aligned (no rotation).
-    // Requires: total_mass_ and inertia_com_ already computed (call calculate_module_inertia first).
     if (total_mass_ <= 0.0) {
         throw std::runtime_error("module_inertia_wrt_parent: total mass not set. Call calculate_module_inertia first.");
     }
 
+    // rotating inertia tensor to parent frame
+    auto inertia_com_parent = rotate_inertia(inertia_com_, q_parent_from_child);
+
     const double M  = total_mass_;
-    const double dx = parent_distance[0];
-    const double dy = parent_distance[1];
-    const double dz = parent_distance[2];
+    const double dx = parent_distance_parent[0];
+    const double dy = parent_distance_parent[1];
+    const double dz = parent_distance_parent[2];
     const double d2 = dx*dx + dy*dy + dz*dz;
 
     // Parallel-axis term: M * (||d||^2 I - d d^T)
@@ -33,9 +34,9 @@ void SpaceStationModuleInertia::calculate_module_inertia_wrt_parent()
 
     // Inertia wrt parent origin, expressed in parent frame (aligned frames)
     inertia_wrt_parent = {{
-        {{ inertia_com_[0][0] + PA[0][0], inertia_com_[0][1] + PA[0][1], inertia_com_[0][2] + PA[0][2] }},
-        {{ inertia_com_[1][0] + PA[1][0], inertia_com_[1][1] + PA[1][1], inertia_com_[1][2] + PA[1][2] }},
-        {{ inertia_com_[2][0] + PA[2][0], inertia_com_[2][1] + PA[2][1], inertia_com_[2][2] + PA[2][2] }}
+        {{ inertia_com_parent[0][0] + PA[0][0], inertia_com_parent[0][1] + PA[0][1], inertia_com_parent[0][2] + PA[0][2] }},
+        {{ inertia_com_parent[1][0] + PA[1][0], inertia_com_parent[1][1] + PA[1][1], inertia_com_parent[1][2] + PA[1][2] }},
+        {{ inertia_com_parent[2][0] + PA[2][0], inertia_com_parent[2][1] + PA[2][1], inertia_com_parent[2][2] + PA[2][2] }}
     }};
 
     std::cout << "I(COM):\n";
