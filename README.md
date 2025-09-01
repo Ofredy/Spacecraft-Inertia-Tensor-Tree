@@ -10,26 +10,7 @@ A depth-first (post-order) pass accumulates children first, then parents, up to 
 - Mass per module: 4 points × 500 kg = 2000 kg
 - Total mass: 12,000 kg
 
-                          ( +y )
-                            ↑
-                            |
-                (-5,+5)     |    (+5,+5)
-                   b        |       c
-                 roll 60°   |    roll 20°
-                      \     |     /
-                       \    |    /
-                        \   |   /
-                         \  |  /
-                           module_a (root)
-                         /  / \  \
-                        /  /   \  \
-                       /  /     \  \
-            (-5,-5)  d  |        \  e  (+5,-5)
-           roll 80°     |         \ roll 70°
-                        |
-                      (0,-5)
-                        f
-                      roll 0°
+![Station Layout](misc/station_layout.png)
 
 ## Legend:
 
