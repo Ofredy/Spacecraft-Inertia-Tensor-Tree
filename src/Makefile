@@ -5,7 +5,7 @@
 # --- toolchain & flags ---
 CXX       := g++
 CXXFLAGS  := -std=c++17 -O2 -Wall -Wextra -Wpedantic
-CPPFLAGS  := -I"../lib/inertia_tree_lib"
+CPPFLAGS  := -I"../lib/inertia_tree_lib" -I"../lib/json/single_include"
 
 # --- exe name (handles Windows .exe) ---
 APP    := inertia_tree

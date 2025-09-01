@@ -1,11 +1,26 @@
 #include "station_module_inertia.h"
 
 
-void SpaceStationModuleInertia::calculate_module_inertia(
-    const std::vector<double>& masses,
-    const std::vector<std::array<double,3>>& positions)
+void SpaceStationModuleInertia::load_points_(
+    const std::vector<double>& m,
+    const std::vector<std::array<double,3>>& p)
 {
-    load_points_(masses, positions);
+    if (m.empty() || p.empty())
+        throw std::invalid_argument("Inputs must be non-empty.");
+    if (m.size() != p.size())
+        throw std::invalid_argument("masses and positions must have the same length.");
+
+    points_.clear();
+    points_.reserve(m.size());
+    for (std::size_t i = 0; i < m.size(); ++i) 
+    {
+        if (m[i] <= 0.0) throw std::invalid_argument("Each mass must be positive.");
+        points_.push_back(MassPoint{ m[i], p[i][0], p[i][1], p[i][2] });
+    }
+}
+
+void SpaceStationModuleInertia::calculate_module_inertia()
+{
     compute_total_mass_and_com_();
     compute_inertia_about_com_();
 }
@@ -19,7 +34,7 @@ void SpaceStationModuleInertia::calculate_module_inertia_wrt_parent()
     // rotating inertia tensor to parent frame
     auto inertia_com_parent = rotate_inertia(inertia_com_, q_parent_from_child);
 
-    const double M  = total_mass_;
+    const double M  = calculate_subtree_mass_();
     const double dx = parent_distance_parent[0];
     const double dy = parent_distance_parent[1];
     const double dz = parent_distance_parent[2];
@@ -39,7 +54,7 @@ void SpaceStationModuleInertia::calculate_module_inertia_wrt_parent()
         {{ inertia_com_parent[2][0] + PA[2][0], inertia_com_parent[2][1] + PA[2][1], inertia_com_parent[2][2] + PA[2][2] }}
     }};
 
-    std::cout << "I(COM):\n";
+    std::cout << name_ << " wrt to parent " << "I(COM):\n";
     std::cout << "  [ " << inertia_wrt_parent[0][0] << "  " << inertia_wrt_parent[0][1] << "  " << inertia_wrt_parent[0][2] << " ]\n";
     std::cout << "  [ " << inertia_wrt_parent[1][0] << "  " << inertia_wrt_parent[1][1] << "  " << inertia_wrt_parent[1][2] << " ]\n";
     std::cout << "  [ " << inertia_wrt_parent[2][0] << "  " << inertia_wrt_parent[2][1] << "  " << inertia_wrt_parent[2][2] << " ]\n";
@@ -51,22 +66,13 @@ void SpaceStationModuleInertia::add_module_child(SpaceStationModuleInertia* chil
     children_.push_back(child_module);
 }
 
-void SpaceStationModuleInertia::load_points_(
-    const std::vector<double>& m,
-    const std::vector<std::array<double,3>>& p)
+double SpaceStationModuleInertia::calculate_subtree_mass_()
 {
-    if (m.empty() || p.empty())
-        throw std::invalid_argument("Inputs must be non-empty.");
-    if (m.size() != p.size())
-        throw std::invalid_argument("masses and positions must have the same length.");
-
-    points_.clear();
-    points_.reserve(m.size());
-    for (std::size_t i = 0; i < m.size(); ++i) 
-    {
-        if (m[i] <= 0.0) throw std::invalid_argument("Each mass must be positive.");
-        points_.push_back(MassPoint{ m[i], p[i][0], p[i][1], p[i][2] });
+    double m = total_mass_;
+    for (auto* ch : children_) {
+        m += ch->calculate_subtree_mass_();
     }
+    return m;
 }
 
 void SpaceStationModuleInertia::compute_total_mass_and_com_() 
@@ -120,7 +126,7 @@ void SpaceStationModuleInertia::compute_inertia_about_com_()
         inertia_com_[2][0] += C[2][0]; inertia_com_[2][1] += C[2][1]; inertia_com_[2][2] += C[2][2];
     }
 
-    std::cout << "I(COM):\n";
+    std::cout << name_ << " I(COM):\n";
     std::cout << "  [ " << inertia_com_[0][0] << "  " << inertia_com_[0][1] << "  " << inertia_com_[0][2] << " ]\n";
     std::cout << "  [ " << inertia_com_[1][0] << "  " << inertia_com_[1][1] << "  " << inertia_com_[1][2] << " ]\n";
     std::cout << "  [ " << inertia_com_[2][0] << "  " << inertia_com_[2][1] << "  " << inertia_com_[2][2] << " ]\n";
