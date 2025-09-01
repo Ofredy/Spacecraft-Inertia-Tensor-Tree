@@ -15,5 +15,5 @@ A depth-first (post-order) pass accumulates children first, then parents, up to 
 ## Legend:
 
 - Labels on edges are parent_offset [dx,dy] from child COM to parent COM.
-- “roll θ°” means the quaternion given is a rotation about x by θ (per your data).
+- “roll θ°” means the quaternion given is a rotation about x by θ
 - All modules have identical internal point layout at (±1, ±1, 0).
