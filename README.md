@@ -1,6 +1,5 @@
 # Spacecraft-Inertia-Tensor-Tree
 
-## Spacecraft Inertia Tensor Tree
 Compute the moment of inertia (MOI) for a modular spacecraft assembled as a tree of rigid modules.
 Each module has its own mass points; the tree wires modules together with a relative transform (quaternion + offset).
 A depth-first (post-order) pass accumulates children first, then parents, up to the root.
